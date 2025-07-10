@@ -17,7 +17,12 @@
             <td>Course 1</td>
             <td>Course 2</td>
             <td>Course 3</td>
+            @if($exam->exam_type == 2)
+                <td>Course 4</td>
+                <td>Course 5</td>
+            @endif
             <td>Verified</td>
+            <td>Update</td>
         </tr>
     </thead>
     <tbody>
@@ -29,6 +34,10 @@
                 <td>{{$student['course1']}}</td>
                 <td>{{$student['course2']}}</td>
                 <td>{{$student['course3']}}</td>
+                @if($exam->exam_type == 2)
+                    <td>{{$student['course4']}}</td>
+                    <td>{{$student['course5']}}</td>
+                @endif
                 <td>
                     <input class="form-check-input" type="checkbox" value="{{$student['id']}}" name="verification[]" 
                     @if($student["verified"]== true)
@@ -36,6 +45,7 @@
                     @endif
                     >
                 </td>
+                <td><a class="btn-sm btn-primary" role="button" href="/update-student/{{$student['id']}}" class="">Update</a></td>
             </tr>
         @endforeach
     </tbody>

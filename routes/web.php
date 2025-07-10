@@ -35,4 +35,6 @@ Route::get('/admin',[HomeController::class, 'admin'])->middleware('adminlogin');
 Route::get('/logout', [HomeController::class, 'logout']);
 Route::get('/download/{examid}/{roll}',[HomeController::class, 'download']);
 Route::post('/exams',[HomeController::class, 'addorupdateexams'])->middleware('adminlogin');
+Route::get('/update-student/{id}', [AdminController::class, 'updateStudent'])->middleware('adminlogin');
+Route::post('/update-student', [AdminController::class, 'updateStudentPost'])->middleware('adminlogin');
 

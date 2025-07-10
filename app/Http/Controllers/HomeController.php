@@ -39,7 +39,7 @@ class HomeController extends Controller
         $name = $request->input('name');
         $roll = $request->input('roll');
         $reg = $request->input('registration');
-
+        $type = $request->input('exam_type');
 
         $data = [
             'examid'=>$examid,
@@ -65,13 +65,42 @@ class HomeController extends Controller
         {
             $data["course3"] = $course3;
         }    
+        if($type == 2)
+        {
+            $course4 = $request->input('course4');
+            $course5 = $request->input('course5');
+            if($course4 && $course4 > 0 )
+            {
+                $data["course4"] = $course4;
+            } 
+            if($course5 && $course5 > 0 )
+            {
+                $data["course5"] = $course5;
+            } 
+        }
+        $course = Course::all()->pluck('course_code', 'id')->toArray();
         $std = RegisteredStudent::all()->where('examid','=',$examid)->where('roll','=',$roll)->first();
         if($std) {
-            echo "You've already registered for this exam. To download your application again <a href='/download/".$examid."/".$roll."'>click here</a>";
+            if($type == 2)
+            {
+                return view("shortregistrationpreview")->with([
+                    "student"=>$std,
+                    "courses"=>$course
+                ]);
+            }
+            echo "You've already registered for this exam. To download your application again <a href='/download/".$examid."/".$roll."'>click here</a><div class='text-warning'>If you need to change any data, please contact with your course advisor.</div>";
             return;
         }
         
         RegisteredStudent::insert($data);
+        if($type == 2)
+        {
+            flash()->addSuccess("Registration Successful.");
+            return view("shortregistrationpreview")->with([
+                "student"=>(object)$data,
+                "courses"=>$course
+            ]);
+        }
         return redirect("/download/".$examid.'/'.$roll);
         
     }
@@ -123,6 +152,7 @@ class HomeController extends Controller
             $exam->deadline = "";
             $exam->exam_name = "";
             $exam->department = "";
+            $exam->exam_type = 1;
             return view('exam')->with(['new'=>true, 
                                         'exam'=>$exam,
                                         'courses'=>$courses,
@@ -147,6 +177,7 @@ class HomeController extends Controller
         $name = $req->input('exam_name');
         $dept = $req->input('department');
         $series = $req->input('series');
+        $type = $req->input('exam_type');
         $deadline = $req->input('deadline');
         $selected = $req->input('assignedcourses');
         if($operation == "delete")
@@ -159,7 +190,7 @@ class HomeController extends Controller
         else if($operation == "update")
         {
             $examid = $req->input('exam_id');
-            AvailableExam::where('id','=',$examid)->update(array('exam_name'=>$name, 'department'=>$dept,'series'=>$series, 'deadline'=>$deadline));
+            AvailableExam::where('id','=',$examid)->update(array('exam_name'=>$name, 'department'=>$dept,'series'=>$series, 'deadline'=>$deadline, 'exam_type'=>$type));
             
             CourseExamMapping::where('examid','=',$examid)->delete();
             
@@ -180,9 +211,9 @@ class HomeController extends Controller
             $exam->department = $dept;
             $exam->series= $series;
             $exam->deadline = $deadline;
+            $exam->exam_type = $type;
             $exam->save();
             $examid = $exam->id;
-            
             foreach($selected as $course)
             {
                 $obj = new CourseExamMapping;

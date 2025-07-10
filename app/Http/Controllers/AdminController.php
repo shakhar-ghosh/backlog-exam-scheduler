@@ -8,6 +8,7 @@ use App\Models\RegisteredStudent;
 use Hamcrest\Core\IsTypeOf;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
+use Symfony\Component\VarDumper\Test\VarDumperTestTrait;
 
 class AdminController extends Controller
 {
@@ -34,6 +35,13 @@ class AdminController extends Controller
 
             if($std['course3'] && $std['course3']>0) 
                 $std['course3'] = $coursemap[$std['course3']];
+
+            if($std['course4'] && $std['course4']>0) 
+                $std['course4'] = $coursemap[$std['course4']];
+
+            if($std['course5'] && $std['course5']>0) 
+                $std['course5'] = $coursemap[$std['course5']];
+            
             array_push($stds,$std);
         }
         return view('student')->with([
@@ -59,6 +67,10 @@ class AdminController extends Controller
         $edge = (object)[];
         $result = (object)[];
         $vertex = [];
+        $courseStudentMap = (object)[];
+
+        $coursemap = Course::all()->pluck('course_code','id')->toArray();
+        
         foreach($allstd as $std)
         {
             if($std['course1'])
@@ -67,23 +79,60 @@ class AdminController extends Controller
                 array_push($vertex, $std['course2']);
             if($std['course3'])
                 array_push($vertex, $std['course3']);
+            if($std['course4'])
+                array_push($vertex, $std['course4']);
+            if($std['course5'])
+                array_push($vertex, $std['course5']);
         }
+
+        sort($vertex);
         $vertexcount = array_count_values($vertex);
         $vertex = array_unique($vertex);
         foreach($vertex as $v)
         {
             $edge->$v = [];
-            $result->$v = -1;
+            if($coursemap[$v][-1] % 2) 
+                    $result->$v = -1;
+            $courseStudentMap->$v = [];
         }
         foreach($allstd as $std)
         {
             $items = [];
             if($std['course1'])
-                array_push($items, $std['course1']);
+            {
+                $idx = $std['course1'];
+                if($coursemap[$std['course1']][-1] % 2) 
+                    array_push($items, $std['course1']);
+                array_push($courseStudentMap->$idx, $std['roll']);
+            }
             if($std['course2'])
-                array_push($items, $std['course2']);
+            {
+                $idx = $std['course2'];
+                if($coursemap[$std['course2']][-1] % 2) 
+                    array_push($items, $std['course2']);
+                array_push($courseStudentMap->$idx, $std['roll']);
+            }
             if($std['course3'])
-                array_push($items, $std['course3']);
+            {
+                $idx = $std['course3'];
+                if($coursemap[$std['course3']][-1] % 2) 
+                    array_push($items, $std['course3']);
+                array_push($courseStudentMap->$idx, $std['roll']);
+            }
+            if($std['course4'])
+            {
+                $idx = $std['course4'];
+                if($coursemap[$std['course4']][-1] % 2) 
+                    array_push($items, $std['course4']);
+                array_push($courseStudentMap->$idx, $std['roll']);
+            }
+            if($std['course5'])
+            {
+                $idx = $std['course5'];
+                if($coursemap[$std['course5']][-1] % 2) 
+                    array_push($items, $std['course5']);
+                array_push($courseStudentMap->$idx, $std['roll']);
+            }
             foreach($items as $item)
             {
                 foreach($items as $it)
@@ -125,7 +174,8 @@ class AdminController extends Controller
         $colors = [];
         foreach($vertex as $v)
         {
-            array_push($colors, $result->$v);
+            if($coursemap[$v][-1] % 2) 
+                array_push($colors, $result->$v);
         }
         foreach($colors as $color)
         {
@@ -133,15 +183,21 @@ class AdminController extends Controller
         }
         foreach($vertex as $v)
         {
-            array_push($ret[$result->$v], $v);
+            if($coursemap[$v][-1] % 2) 
+                array_push($ret[$result->$v], $v);
         }
-        $coursemap = Course::all()->wherein('id',$vertex)->pluck('course_code','id')->toArray();
+        foreach($vertex as $course)
+        {
+            sort($courseStudentMap->$course);
+        }
+
         return view('schedule')->with([
             'edge'=>$edge,
             'vertex'=>$vertex,
             'vertexcount'=>$vertexcount,
             'result'=>$ret,
-            'coursemap'=>$coursemap
+            'coursemap'=>$coursemap,
+            'courseStudentMap'=>$courseStudentMap
         ]);
     }
     public function course($courseid, $examid)
@@ -214,5 +270,54 @@ class AdminController extends Controller
                 flash()->addError('Delete course operation failed');
             return redirect('/exams/'.$examid);
         }
+    }
+    function updateStudent($id)
+    {
+        $std = RegisteredStudent::all()->where('id', '=', $id)->first();
+        $exam = AvailableExam::all()->where('id', '=', $std->examid)->first();
+        $courses = Course::all();
+        return view('updatestudent')->with([
+            'student'=>$std,
+            'courses'=>$courses,
+            'exam'=>$exam
+        ]);
+    }
+    function updateStudentPost(Request $req)
+    {
+        $id = $req->input("id");
+        $type = $req->input("exam_type");
+        if($req->input("submit") == "delete")
+        {
+            $res = RegisteredStudent::where('id','=', $id)->delete();
+            if($res)
+                flash()->addSuccess('Entry deleted successfully');
+            else 
+                flash()->addError('Delete entry operation failed');
+        }
+        else
+        {
+            $name = $req->input("name");
+            $registration = $req->input("registration");
+            $course1 = $req->input("course1");
+            $course2 = $req->input("course2")?$req->input("course2"):null;
+            $course3 = $req->input("course3")?$req->input("course3"):null;
+            $course4 = $req->input("course4")?$req->input("course4"):null;
+            $course5 = $req->input("course5")?$req->input("course5"):null;
+            
+            $res = RegisteredStudent::where('id','=', $id)->update(array(
+                    'name'=>$name,
+                    'registration'=>$registration,
+                    'course1'=>$course1,
+                    'course2'=>$course2,
+                    'course3'=>$course3,
+                    'course4'=>$course4,
+                    'course5'=>$course5
+            ));
+            if($res)
+                flash()->addSuccess('Course updated successfully');
+            else 
+                flash()->addError('Update course operation failed');
+        }
+        return redirect("/admin");
     }
 }

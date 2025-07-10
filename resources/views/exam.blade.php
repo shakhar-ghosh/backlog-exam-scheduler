@@ -23,6 +23,13 @@
             <label for="deadline">Deadline:</label>
             <input type="date" class="form-control" name="deadline" id="deadline" value="{{$exam->deadline}}" required/>
         </div>
+        <div class="form-check">
+            <label class="form-check-input">Exam Type:</label></br>
+            <input class="form-check-input" type="radio" name="exam_type" id="radio_backlog" value="1" <?php if($exam->exam_type == 1) echo("checked");?> />
+            <label class="form-check-label" for="radio_backlog">Backlog</label><br/>
+            <input class="form-check-input" type="radio" name="exam_type" id="radio_short" value="2" <?php if($exam->exam_type == 2) echo("checked");?>/>
+            <label class="form-check-label" for="radio_short">Short Semester</label>
+        </div>
         <div class="row">
             <div class="md-col-6">
                 <label for="courseTable">Select the courses available for this exam:</label>
